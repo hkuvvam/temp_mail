@@ -1,0 +1,168 @@
+<!-- templates/index.html -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TempMail - Temporary Email Service</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #1c1e22;
+            color: #ffffff;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .container {
+            text-align: center;
+            background-color: #2a2d32;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+            width: 400px;
+        }
+
+        .container h1 {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        .email-box {
+            background-color: #44474e;
+            padding: 10px;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .email-box input {
+            border: none;
+            background-color: transparent;
+            color: #ffffff;
+            font-size: 18px;
+            width: 100%;
+            outline: none;
+        }
+
+        .email-box button {
+            background-color: #00b894;
+            border: none;
+            color: white;
+            padding: 5px 10px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        .actions {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+        }
+
+        .actions button {
+            background-color: #2c2f36;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        .actions button:hover {
+            background-color: #00b894;
+        }
+
+        p {
+            font-size: 12px;
+            color: #9a9da1;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Your Temporary Email Address</h1>
+        <div class="email-box">
+            <input type="text" id="temp-email" readonly value="{{ email }}">
+            <button onclick="copyEmail()">Copy</button>
+        </div>
+        <div class="actions">
+            <button onclick="generateEmail()">Generate New Email</button>
+            <button onclick="deleteEmail()">Delete</button>
+        </div>
+        <p>Forget about spam, advertising mailings, and robots. Keep your real mailbox clean and secure.</p>
+    </div>
+
+    <script>
+        let currentEmail = '';
+
+        function copyEmail() {
+            const emailField = document.getElementById('temp-email');
+            emailField.select();
+            document.execCommand('copy');
+            alert('Email copied to clipboard!');
+        }
+
+        function generateEmail() {
+            fetch('/generate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if(data.email){
+                    currentEmail = data.email;
+                    document.getElementById('temp-email').value = data.email;
+                } else {
+                    alert('Error generating email.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error generating email.');
+            });
+        }
+
+        function deleteEmail() {
+            if(!currentEmail){
+                alert('No email to delete.');
+                return;
+            }
+
+            fetch('/delete', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ email: currentEmail })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if(data.message){
+                    alert(data.message);
+                    document.getElementById('temp-email').value = 'deleted';
+                    currentEmail = '';
+                } else if(data.error){
+                    alert('Error: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error deleting email.');
+            });
+        }
+
+        // On load, generate a new email
+        window.onload = generateEmail;
+    </script>
+</body>
+</html>
